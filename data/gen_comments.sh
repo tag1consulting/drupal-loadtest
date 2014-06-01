@@ -10,6 +10,11 @@ function random {
   do
     number=$RANDOM
     let "number %= $RANGE"
+    # Be sure number >= 1
+    if [ "$number" -le 0 ]
+    then
+      number=1
+    fi
     printf '"%s"' $number
     if [ $J -ne 14 ]
     then
