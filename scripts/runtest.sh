@@ -3,6 +3,12 @@
 # Pass the script a tag to identify this testrun (e.g. memcache module version being tested)
 TAG=$1
 
+if [ "$TAG" == "" ]
+then
+  echo "You must pass a tag to the script -- will be appeneded to the output directory for this test."
+  exit 1
+fi
+
 DATE=`date +%d-%m-%y--%H:%M:%S-$TAG`
 BASEDIR="/root/jmeter"
 WEBROOT="/var/www/html"
@@ -10,6 +16,15 @@ OUTPUT="$BASEDIR/output"
 DEST="$WEBROOT/$DATE"
 SECONDS=300
 IPADDR=$(/sbin/ifconfig eth0 | /bin/grep 'inet addr' | /bin/cut -d':' -f 2 | /bin/cut -d' ' -f 1)
+# This is output by preptest.sh...
+SQL_DUMP=/root/drupal_with_test_content.sql.gz
+DB_NAME=drupal
+
+# Load the database into MySQL so each test starts with the same base data.
+echo "Reloading DB, this will likely take a few minutes..."
+mysql -e "DROP DATABASE $DB_NAME"
+mysql -e "CREATE DATABASE $DB_NAME"
+gunzip -c $SQL_DUMP | mysql $DB_NAME
 
 /sbin/service mysqld restart
 /sbin/service httpd restart
