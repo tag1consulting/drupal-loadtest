@@ -33,7 +33,7 @@ drush -r ${WEBDIR} generate-content ${CONTENT_COUNT} ${MAX_COMMENTS}
 drush dl memcache-${MEMCACHE_VERSION} --destination=${WEBDIR}/sites/all/modules
 
 # Add memcache configuration to settings.php
-cat ${MEMCACHE_SETTINGS_FILE} >> ${WEBDIR}/sites/all/settings.php
+cat ${MEMCACHE_SETTINGS_FILE} >> ${WEBDIR}/sites/default/settings.php
 
 # Update user names and passwords (sets passwords to 'supersecrettestuser').
 # The CSV data for the test expects these specific usernames (e.g. 'user1', 'user2' from 1-5000).
