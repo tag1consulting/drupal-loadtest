@@ -5,7 +5,7 @@
 
 WEBDIR=/var/www/html
 MEMCACHE_SETTINGS_FILE=memcache.settings.inc
-MEMCACHE_VERSION=7.x-1.1-beta5
+MEMCACHE_VERSION=7.x-1.2
 DATABASE_NAME=drupal
 
 USER_COUNT=5000
@@ -17,10 +17,10 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 MEMCACHE_SETTINGS_FILE=${DIR}/${MEMCACHE_SETTINGS_FILE}
 
 # Create modules directory if it doesn't already exist.
-mkdir -p ${WEBDIR}/sites/default/modules
+mkdir -p ${WEBDIR}/sites/all/modules
 
 # Install devel module and enable devel_generate.
-drush dl devel --destination=${WEBDIR}/sites/default/modules
+drush dl devel --destination=${WEBDIR}/sites/all/modules
 drush -r ${WEBDIR} -y en devel_generate
 
 # Create content.
@@ -30,10 +30,10 @@ echo "Creating ${CONTENT_COUNT} nodes with up to ${MAX_COMMENTS} comments each, 
 drush -r ${WEBDIR} generate-content ${CONTENT_COUNT} ${MAX_COMMENTS}
 
 # Install memcache module
-drush dl memcache-${MEMCACHE_VERSION} --destination=${WEBDIR}/sites/default/modules
+drush dl memcache-${MEMCACHE_VERSION} --destination=${WEBDIR}/sites/all/modules
 
 # Add memcache configuration to settings.php
-cat ${MEMCACHE_SETTINGS_FILE} >> ${WEBDIR}/sites/default/settings.php
+cat ${MEMCACHE_SETTINGS_FILE} >> ${WEBDIR}/sites/all/settings.php
 
 # Update user names and passwords (sets passwords to 'supersecrettestuser').
 # The CSV data for the test expects these specific usernames (e.g. 'user1', 'user2' from 1-5000).

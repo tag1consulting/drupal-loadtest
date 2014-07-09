@@ -1,7 +1,7 @@
 
 // Memcached settings.
-$conf['cache_backends'][] = 'sites/default/modules/memcache/memcache.inc';
-$conf['lock_inc'] = 'sites/default/modules/memcache/memcache-lock.inc';
+$conf['cache_backends'][] = 'sites/all/modules/memcache/memcache.inc';
+$conf['lock_inc'] = 'sites/all/modules/memcache/memcache-lock.inc';
 $conf['memcache_stampede_protection'] = TRUE;
 $conf['cache_default_class'] = 'MemCacheDrupal';
 
