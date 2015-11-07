@@ -10,6 +10,7 @@ Assumptions
 These scripts assume:
  1.  A Drupal installation -- webroot and database.
  2.  [Apache Jmeter](http://jmeter.apache.org/) installed to /usr/local/jmeter/
+ 3.  This repo was checked out at /root and renamed to jmeter
 
 Running Tests
 -------------
