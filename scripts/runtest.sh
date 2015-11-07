@@ -11,14 +11,14 @@ fi
 
 DATE=`date +%d-%m-%y--%H:%M:%S-$TAG`
 BASEDIR="/root/jmeter"
-WEBROOT="/var/www/html"
+WEBROOT="/var/www/vagrant-multi1.tag1consulting.com"
 OUTPUT="$BASEDIR/output"
 DEST="$WEBROOT/$DATE"
 SECONDS=300
 IPADDR=$(/sbin/ifconfig eth0 | /bin/grep 'inet addr' | /bin/cut -d':' -f 2 | /bin/cut -d' ' -f 1)
 # This is output by preptest.sh...
 SQL_DUMP=/root/drupal_with_test_content.sql.gz
-DB_NAME=drupal
+DB_NAME=vagrant
 
 # Load the database into MySQL so each test starts with the same base data.
 echo "Reloading DB, this will likely take a few minutes..."
@@ -26,7 +26,7 @@ mysql -e "DROP DATABASE $DB_NAME"
 mysql -e "CREATE DATABASE $DB_NAME"
 gunzip -c $SQL_DUMP | mysql $DB_NAME
 
-/sbin/service mysqld restart
+/sbin/service mariadb restart
 /sbin/service httpd restart
 /sbin/service memcached restart
 
@@ -37,7 +37,7 @@ rm -f "$WEBROOT/latest"
 ln -s $DEST "$WEBROOT/latest"
 # Add .htaccess to override Drupal's default of disabling indexes.
 echo "Options +Indexes" > $WEBROOT/latest/.htaccess
-echo 'stats' | nc localhost 11211 > "$WEBROOT/latest/memcached.stats.txt"
+echo 'stats' | nc 127.0.0.1 11211 > "$WEBROOT/latest/memcached.stats.txt"
 
 SUMMARY="$WEBROOT/latest/summary.tsv"
 

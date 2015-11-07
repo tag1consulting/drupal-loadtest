@@ -3,10 +3,10 @@
 # Prep a base Drupal install for memcache testing.
 # This assumes that $WEBDIR contains a working Drupal install.
 
-WEBDIR=/var/www/html
+WEBDIR=/var/www/vagrant-multi1.tag1consulting.com
 MEMCACHE_SETTINGS_FILE=memcache.settings.inc
-MEMCACHE_VERSION=7.x-1.2
-DATABASE_NAME=drupal
+MEMCACHE_VERSION=6.x-1.11-rc1
+DATABASE_NAME=vagrant
 
 USER_COUNT=5000
 CONTENT_COUNT=10000
