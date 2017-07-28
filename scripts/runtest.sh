@@ -47,7 +47,7 @@ $RESTART_APACHE 2>&1 > $OUTPUT/apache_restart.log
 $RESTART_MEMCACHED 2>&1 > $OUTPUT/memcached_restart.log
 
 # Run loadtest
-$LOCUST -f $LOCUST_PLAN --host=$DOMAIN --no-web -c $USERS -r $RAMPUP -n $REQUESTS --only-summary --logfile=$OUTPUT/locust.txt
+$LOCUST -f $LOCUST_PLAN --host=$DOMAIN --no-web -c $USERS -r $RAMPUP -n $REQUESTS --only-summary --logfile=$OUTPUT/locust.log > $OUTPUT/locust.txt 2>&1
 
 rm -f "$WEBROOT/latest"
 ln -s $OUTPUT "$WEBROOT/latest"

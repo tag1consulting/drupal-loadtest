@@ -1,2 +1,2 @@
 output
-jmeter.log
+*.pyc
