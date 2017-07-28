@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Pass the script a tag to identify this testrun (e.g. memcache module version being tested)
 TAG=$1
@@ -9,16 +9,32 @@ then
   exit 1
 fi
 
+DOMAIN="http://loadtest.dev"
+
+LOCUST=/usr/local/bin/locust
+LOCUST_PLAN=/root/drupal-loadtest/locust_testplan.py
+
+RESTART_MYSQL="/usr/local/etc/rc.d/mysql-server restart"
+RESTART_APACHE="service apache24 restart"
+RESTART_MEMCACHED="service memcached restart"
+
+USERS=100
+RAMPUP=10
+REQUESTS=50000
+
 DATE=`date +%d-%m-%y--%H:%M:%S-$TAG`
-BASEDIR="/root/jmeter"
 WEBROOT="/var/www/html"
-OUTPUT="$BASEDIR/output"
-DEST="$WEBROOT/$DATE"
-SECONDS=300
-IPADDR=$(/sbin/ifconfig eth0 | /bin/grep 'inet addr' | /bin/cut -d':' -f 2 | /bin/cut -d' ' -f 1)
+OUTPUT="$WEBROOT/$DATE"
+
+mkdir $OUTPUT
+
+NC="/usr/bin/nc -N"
+
+IPADDR="ConfigureMe"
+
 # This is output by preptest.sh...
 SQL_DUMP=/root/drupal_with_test_content.sql.gz
-DB_NAME=drupal
+DB_NAME=drupal6loadtest
 
 # Load the database into MySQL so each test starts with the same base data.
 echo "Reloading DB, this will likely take a few minutes..."
@@ -26,18 +42,19 @@ mysql -e "DROP DATABASE $DB_NAME"
 mysql -e "CREATE DATABASE $DB_NAME"
 gunzip -c $SQL_DUMP | mysql $DB_NAME
 
-/sbin/service mysqld restart
-/sbin/service httpd restart
-/sbin/service memcached restart
+$RESTART_MYSQL 2>&1 > $OUTPUT/mysql_restart.log
+$RESTART_APACHE 2>&1 > $OUTPUT/apache_restart.log
+$RESTART_MEMCACHED 2>&1 > $OUTPUT/memcached_restart.log
 
-/usr/local/jmeter/bin/jmeter -n -t ${BASEDIR}/loadtest.jmx -j $BASEDIR/jmeter.log
-mv "$BASEDIR/jmeter.log" $OUTPUT
-mv $OUTPUT $DEST
+# Run loadtest
+$LOCUST -f $LOCUST_PLAN --host=$DOMAIN --no-web -c $USERS -r $RAMPUP -n $REQUESTS --only-summary --logfile=$OUTPUT/locust.txt
+
 rm -f "$WEBROOT/latest"
-ln -s $DEST "$WEBROOT/latest"
+ln -s $OUTPUT "$WEBROOT/latest"
+
 # Add .htaccess to override Drupal's default of disabling indexes.
 echo "Options +Indexes" > $WEBROOT/latest/.htaccess
-echo 'stats' | nc localhost 11211 > "$WEBROOT/latest/memcached.stats.txt"
+echo 'stats' | $NC localhost 11211 > "$WEBROOT/latest/memcached.stats.txt"
 
 SUMMARY="$WEBROOT/latest/summary.tsv"
 
@@ -66,26 +83,7 @@ echo "\"Miss rate\"	$RATE%" >> $SUMMARY 2>&1
 
 echo >> $SUMMARY 2>&1
 
-C20x=`grep "rc=\"20" "$WEBROOT/latest/all_queries.jtl" | wc -l` >> $SUMMARY 2>&1
-C200=`grep "rc=\"200" "$WEBROOT/latest/all_queries.jtl" | wc -l` >> $SUMMARY 2>&1
-C30x=`grep "rc=\"30" "$WEBROOT/latest/all_queries.jtl"| wc -l` >> $SUMMARY 2>&1
-C302=`grep "rc=\"302" "$WEBROOT/latest/all_queries.jtl"| wc -l` >> $SUMMARY 2>&1
-C40x=`grep "rc=\"40" "$WEBROOT/latest/all_queries.jtl"| wc -l` >> $SUMMARY 2>&1
-C50x=`grep "rc=\"50" "$WEBROOT/latest/all_queries.jtl"| wc -l` >> $SUMMARY 2>&1
-TOTAL=`expr $C20x + $C30x + $C40x + $C50x` >> $SUMMARY 2>&1
-RATE=`echo "scale=2;$TOTAL / $SECONDS" | bc` >> $SUMMARY 2>&1
-
-echo "\"Pages per second\"	$RATE" >> $SUMMARY 2>&1
-echo >> $SUMMARY 2>&1
-
-echo "\"HTTP status 20x Success\"	$C20x" >> $SUMMARY 2>&1
-echo "\"HTTP status 30x Redirection\"	$C30x" >> $SUMMARY 2>&1
-echo "\"HTTP status 40x Client Error\"	$C40x" >> $SUMMARY 2>&1
-echo "\"HTTP status 50x Server Error\"	$C50x" >> $SUMMARY 2>&1
-echo >> $SUMMARY 2>&1
-
-echo "\"HTTP status 200 OK\"	$C200" >> $SUMMARY 2>&1
-echo "\"HTTP status 302 Found\"	$C302" >> $SUMMARY 2>&1
+echo $OUTPUT/locust.txt >> $SUMMARY 2>&1
 
 echo >> $SUMMARY 2>&1
 

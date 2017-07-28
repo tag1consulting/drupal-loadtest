@@ -1,9 +1,7 @@
 
-// Memcached settings.
-$conf['cache_backends'][] = 'sites/all/modules/memcache/memcache.inc';
+// Drupal 6 memcached settings.
+$conf['cache_inc'] ='sites/all/modules/memcache/memcache.inc';
 $conf['lock_inc'] = 'sites/all/modules/memcache/memcache-lock.inc';
 $conf['memcache_stampede_protection'] = TRUE;
-$conf['cache_default_class'] = 'MemCacheDrupal';
-
-// The 'cache_form' bin must be assigned no non-volatile storage.
-$conf['cache_class_cache_form'] = 'DrupalDatabaseCache';
+// The 'cache_form' bin must be assigned to non-volatile storage.
+$conf['memcache_bins']['cache_form'] = 'database';
