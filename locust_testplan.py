@@ -11,19 +11,25 @@ def is_static_file(file):
         return False
 
 def random_word():
+    """Return 1 to 12 random characters, a-z inclusive."""
     import string
     length = random.randint(1, 12)
     return "".join( [random.choice(string.letters[:26]) for i in xrange(length)] )
 
 def random_sentence():
+    """Return 3 to 15 random words, capitalizing the first and ending
+    with a period to mimic a sentence."""
     length = random.randint(3, 15)
     return (" ".join(random_word() for i in xrange(length)) + '.').capitalize()
 
 def random_paragraph():
+    """Return 3 to 15 random sentences, seperating with a space."""
     length = random.randint(3, 15)
     return (" ".join(random_sentence() for i in xrange(length)))
 
 def fetch_static_assets(session, response):
+    """Determine if a URL in the web page is a static asset and should be
+    downloaded."""
     resource_urls = set()
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -35,28 +41,34 @@ def fetch_static_assets(session, response):
             print "Skipping: " + url
 
     for url in set(resource_urls):
-        #Note: If you are going to tag different static file paths differently,
-        #this is where I would normally do that.
         session.client.get(url, name="(Static File)")
 
 class AnonBrowsingUser(TaskSet):
     @task(15)
     def frontpage(l):
+        """View the front page."""
         response = l.client.get("/", name="(Anonymous) Front page")
         fetch_static_assets(l, response)
 
     @task(10)
     def nodepage(l):
+        """preptest.sh creates nodes from 1 through 10,000: randomly
+        view one of these nodes.
+        """
         nid = random.randint(1, 10000)
         l.client.get("/node/%i" % nid, name="(Anonymous) /node/[nid]")
 
     @task(3)
     def profilepage(l):
-        uid = random.randint(3, 5000)
+        """preptest.sh creates users from 3 through 5,002: randomly
+        view one of these user profiles.
+        """
+        uid = random.randint(3, 5002)
         l.client.get("/user/%i" % uid, name="(Anonymous) /user/[uid]")
 
 class AuthBrowsingUser(TaskSet):
     def on_start(l):
+        """Log into the website to simulate authenticated traffic."""
         response = l.client.get("/user", name="(Auth) Login")
         soup = BeautifulSoup(response.text, "html.parser")
         drupal_form_id = soup.select('input[name="form_build_id"]')[0]["value"]
@@ -64,21 +76,32 @@ class AuthBrowsingUser(TaskSet):
 
     @task(15)
     def frontpage(l):
+        """View the front page."""
         response = l.client.get("/", name="(Auth) Front page")
         fetch_static_assets(l, response)
 
     @task(10)
     def nodepage(l):
+        """preptest.sh creates nodes from 1 through 10,000: randomly
+        view one of these nodes.
+        """
         nid = random.randint(1, 10000)
         l.client.get("/node/%i" % nid, name="(Auth) /node/[nid]")
 
     @task(3)
     def profilepage(l):
-        uid = random.randint(1, 5000)
+        """preptest.sh creates users from 3 through 5,002: randomly
+        view one of these user profiles.
+        """
+        uid = random.randint(3, 5002)
         l.client.get("/user/%i" % uid, name="(Auth) /user/[uid]")
 
     @task(3)
     def postcomments(l):
+        """preptest.sh creates nodes from 1 through 10,000: randomly
+        add a comment to one of them, if it is a node type that has
+        comments enabled.
+        """
         nid = random.randint(1, 10000)
         response = l.client.get("/comment/reply/%i" % nid, name="(Auth) Comment form")
         soup = BeautifulSoup(response.text, "html.parser")
