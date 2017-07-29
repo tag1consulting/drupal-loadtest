@@ -52,3 +52,8 @@ mysqldump --single-transaction ${DATABASE_NAME} | gzip > /root/drupal_with_test_
 ls -lh  /root/drupal_with_test_content.sql.gz
 
 echo "All done with test prep -- run tests using the runtest.sh script."
+
+echo "@TODO (should be scripted):"
+echo " - enable posting comments w/o preview on both content types"
+echo " - add 'access user profiles' to 'authenticated user'"
+echo " - enable normal page cache"
