@@ -72,7 +72,12 @@ class AuthBrowsingUser(TaskSet):
         response = l.client.get("/user", name="(Auth) Login")
         soup = BeautifulSoup(response.text, "html.parser")
         drupal_form_id = soup.select('input[name="form_build_id"]')[0]["value"]
-        r = l.client.post("/user", {"name":"jeremy", "pass":"12345", "form_id":"user_login", "op":"Log+in", "form_build_id":drupal_form_id}, name="(Auth) Logging in: /user")
+        """preptest.sh creates test users starting from uid3 with usernames
+        like "userUID" and password "12345". Randomly log into one of these
+        users."""
+        username = "user" + str(random.randint(3, 1000))
+        password = "12345"
+        r = l.client.post("/user", {"name":username, "pass":password, "form_id":"user_login", "op":"Log+in", "form_build_id":drupal_form_id}, name="(Auth) Logging in: /user")
 
     @task(15)
     def frontpage(l):
