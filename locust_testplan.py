@@ -1,6 +1,7 @@
 from locust import HttpLocust, TaskSet, task, events
 from bs4 import BeautifulSoup
 import random
+import string
 
 def is_static_file(file):
     if "/misc" in file:
@@ -12,7 +13,6 @@ def is_static_file(file):
 
 def random_word():
     """Return 1 to 12 random characters, a-z inclusive."""
-    import string
     length = random.randint(1, 12)
     return "".join( [random.choice(string.letters[:26]) for i in xrange(length)] )
 
