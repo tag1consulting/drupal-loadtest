@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Prep a base Drupal install for memcache testing.
 # This assumes that $WEBDIR contains a working Drupal install.
 
 WEBDIR=/var/www/html
 MEMCACHE_SETTINGS_FILE=memcache.settings.inc
-MEMCACHE_VERSION=7.x-1.2
-DATABASE_NAME=drupal
+MEMCACHE_VERSION=6.x-1.11
+DATABASE_NAME=drupal6loadtest
 
 USER_COUNT=5000
 CONTENT_COUNT=10000
@@ -40,7 +40,7 @@ cat ${MEMCACHE_SETTINGS_FILE} >> ${WEBDIR}/sites/default/settings.php
 echo "Setting Drupal usernames and passwords to those that the test expects..."
 for i in $(seq 2 5001)
 do
-  mysql -e "UPDATE ${DATABASE_NAME}.users SET name='user${i}', pass='\$S\$DDHmqnax8wgiX9XxV5D9if52hnqvvk2O9KWVGDL1UP5mAdwGov8i' WHERE uid = ${i};"
+  mysql -e "UPDATE ${DATABASE_NAME}.users SET name='user${i}', pass=MD5('12345') WHERE uid = ${i};"
 done
 
 echo "Updating permissions: allow anonymous to access user profiles."
@@ -52,3 +52,8 @@ mysqldump --single-transaction ${DATABASE_NAME} | gzip > /root/drupal_with_test_
 ls -lh  /root/drupal_with_test_content.sql.gz
 
 echo "All done with test prep -- run tests using the runtest.sh script."
+
+echo "@TODO (should be scripted):"
+echo " - enable posting comments w/o preview on both content types"
+echo " - add 'access user profiles' to 'authenticated user'"
+echo " - enable normal page cache"

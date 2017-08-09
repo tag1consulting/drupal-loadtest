@@ -1,15 +1,15 @@
 Drupal Loadtest
 ===============
 
-Jmeter load test and support scripts for testing Drupal sites.
+Locust load test and support scripts for testing Drupal sites.
 
-This Jmeter test plan and scripts are used to test out the [Drupal Memcache module](https://drupal.org/project/memcache).
+This locust test plan and scripts are used to test out the [Drupal Memcache module](https://drupal.org/project/memcache).
 
 Assumptions
 -----------
 These scripts assume:
  1.  A Drupal installation -- webroot and database.
- 2.  [Apache Jmeter](http://jmeter.apache.org/) installed to /usr/local/jmeter/
+ 2.  [Locust](http://locust.io/) installed
 
 Running Tests
 -------------
@@ -22,6 +22,6 @@ In addition, `preptest.sh` prepares the site for tests by populating it with con
 Once that is complete, it will create a database dump in /root so that the same database can be reloaded for subsequent tests.
 
 
-The `runtest.sh` script restarts services (mysqld, httpd, memcached) to ensure consistency between tests. Then it runs the Jmeter load test (loadtest.jmx), copies test output data to the webroot, and outputs memcached stats from the test run into a summary report.
+The `runtest.sh` script restarts services (mysqld, httpd, memcached) to ensure consistency between tests. Then it runs the locust load test, copies test output data to the webroot, and outputs memcached stats from the test run into a summary report.
 
-`runtest.sh` expects one argument, a tag which will be appended to the output directory as a test identifier.
+`runtest.sh` requires one argument, a tag which will be appended to the output directory as a test identifier.
