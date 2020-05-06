@@ -1,7 +1,23 @@
-from locust import HttpLocust, TaskSet, task, events
+from locust import HttpLocust, TaskSet, task, between
 from bs4 import BeautifulSoup
 import random
 import string
+
+def random_word():
+    """Return 1 to 12 random characters, a-z inclusive."""
+    length = random.randint(1, 12)
+    return "".join( [random.choice(string.ascii_lowercase[:26]) for i in range(length)] )
+
+def random_sentence():
+    """Return 3 to 15 random words, capitalizing the first and ending
+    with a period to mimic a sentence."""
+    length = random.randint(3, 15)
+    return (" ".join(random_word() for i in range(length)) + '.').capitalize()
+
+def random_paragraph():
+    """Return 3 to 15 random sentences, seperating with a space."""
+    length = random.randint(3, 15)
+    return (" ".join(random_sentence() for i in range(length)))
 
 def is_static_file(file):
     if "/misc" in file:
@@ -11,34 +27,17 @@ def is_static_file(file):
     else:
         return False
 
-def random_word():
-    """Return 1 to 12 random characters, a-z inclusive."""
-    length = random.randint(1, 12)
-    return "".join( [random.choice(string.letters[:26]) for i in xrange(length)] )
-
-def random_sentence():
-    """Return 3 to 15 random words, capitalizing the first and ending
-    with a period to mimic a sentence."""
-    length = random.randint(3, 15)
-    return (" ".join(random_word() for i in xrange(length)) + '.').capitalize()
-
-def random_paragraph():
-    """Return 3 to 15 random sentences, seperating with a space."""
-    length = random.randint(3, 15)
-    return (" ".join(random_sentence() for i in xrange(length)))
-
 def fetch_static_assets(session, response):
     """Determine if a URL in the web page is a static asset and should be
     downloaded."""
     resource_urls = set()
+
     soup = BeautifulSoup(response.text, "html.parser")
 
     for res in soup.find_all(src=True):
         url = res['src']
         if is_static_file(url):
             resource_urls.add(url)
-        else:
-            print "Skipping: " + url
 
     for url in set(resource_urls):
         session.client.get(url, name="(Static File)")
@@ -112,22 +111,33 @@ class AuthBrowsingUser(TaskSet):
         soup = BeautifulSoup(response.text, "html.parser")
         drupal_form_build_id_object = soup.select('input[name="form_build_id"]')
         drupal_form_token_object = soup.select('input[name="form_token"]')
+        drupal_form_id_object = soup.select('input[name="form_id"]')
         if drupal_form_build_id_object and drupal_form_token_object:
             drupal_form_build_id = drupal_form_build_id_object[0]["value"]
             drupal_form_token = drupal_form_token_object[0]["value"]
+            drupal_form_id = drupal_form_id_object[0]["value"]
             subject = random_sentence()
-            response = l.client.post("/comment/reply/%i" % nid, {"subject":subject, "comment":random_paragraph(), "form_id":"comment_form", "form_token":drupal_form_token, "op":"Save", "form_build_id":drupal_form_build_id}, name="(Auth) Posting comment", catch_response=True)
+            response = l.client.post("/comment/reply/%i" % nid, {
+		"subject":subject,
+		"comment_body[und][0][value]":random_paragraph(),
+		"comment_body[und][0][format]":"filtered_html",
+		"form_token":drupal_form_token,
+		"form_id":drupal_form_id,
+		"op":"Save",
+		"form_build_id":drupal_form_build_id}, name="(Auth) Posting comment", catch_response=True)
             if response.status_code != 200:
                 response.failure("Failed to post comment: " + str(response.status_code))
-            elif subject not in response.content:
+            elif subject.encode() not in response.content:
                 response.failure("Failed to post comment: comment not showing up")
             else:
                 response.success()
 
 class WebsiteAuthUser(HttpLocust):
     weight = 1
-    task_set = AuthBrowsingUser    
+    task_set = AuthBrowsingUser
+    wait_time = between(0, 0)
 
 class WebsiteAnonUser(HttpLocust):
     weight = 4
     task_set = AnonBrowsingUser
+    wait_time = between(0, 0)
