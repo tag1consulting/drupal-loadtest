@@ -1,4 +1,5 @@
-from locust import HttpLocust, TaskSet, task, between
+from locust import TaskSet, task, between
+from locust.contrib.fasthttp import FastHttpLocust
 from bs4 import BeautifulSoup
 import random
 import string
@@ -130,12 +131,12 @@ class AuthBrowsingUser(TaskSet):
             else:
                 response.success()
 
-class WebsiteAuthUser(HttpLocust):
+class WebsiteAuthUser(FastHttpLocust):
     weight = 1
     task_set = AuthBrowsingUser
     wait_time = between(0, 0)
 
-class WebsiteAnonUser(HttpLocust):
+class WebsiteAnonUser(FastHttpLocust):
     weight = 4
     task_set = AnonBrowsingUser
     wait_time = between(0, 0)
