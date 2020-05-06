@@ -2,6 +2,7 @@ from locust import HttpLocust, TaskSet, task, between
 from bs4 import BeautifulSoup
 import random
 import string
+import re
 
 def random_word():
     """Return 1 to 12 random characters, a-z inclusive."""
@@ -32,10 +33,7 @@ def fetch_static_assets(session, response):
     downloaded."""
     resource_urls = set()
 
-    soup = BeautifulSoup(response.text, "html.parser")
-
-    for res in soup.find_all(src=True):
-        url = res['src']
+    for url in re.findall(r'''src=['"](.*?)['"]''', response.text, re.I):
         if is_static_file(url):
             resource_urls.add(url)
 
