@@ -1,6 +1,5 @@
 from locust import TaskSet, task, between
 from locust.contrib.fasthttp import FastHttpLocust
-from bs4 import BeautifulSoup
 import random
 import string
 import re
@@ -68,14 +67,17 @@ class AuthBrowsingUser(TaskSet):
     def on_start(l):
         """Log into the website to simulate authenticated traffic."""
         response = l.client.get("/user", name="(Auth) Login")
-        soup = BeautifulSoup(response.text, "html.parser")
-        drupal_form_id = soup.select('input[name="form_build_id"]')[0]["value"]
+        drupal_form_build_id = re.search(r'''name="form_build_id" value=['"](.*?)['"]''', response.text)
         """preptest.sh creates test users starting from uid3 with usernames
         like "userUID" and password "12345". Randomly log into one of these
         users."""
         username = "user" + str(random.randint(3, 1000))
         password = "12345"
-        r = l.client.post("/user", {"name":username, "pass":password, "form_id":"user_login", "op":"Log+in", "form_build_id":drupal_form_id}, name="(Auth) Logging in: /user")
+        r = l.client.post(
+            "/user",
+            {"name":username, "pass":password, "form_id":"user_login", "op":"Log+in", "form_build_id":drupal_form_build_id.group(0)}, name="(Auth) Logging in: /user")
+        if r.status_code != 200:
+            response.failure("Failed to log in: " + str(response.status_code))
 
     @task(15)
     def frontpage(l):
@@ -107,29 +109,24 @@ class AuthBrowsingUser(TaskSet):
         """
         nid = random.randint(1, 10000)
         response = l.client.get("/comment/reply/%i" % nid, name="(Auth) Comment form")
-        soup = BeautifulSoup(response.text, "html.parser")
-        drupal_form_build_id_object = soup.select('input[name="form_build_id"]')
-        drupal_form_token_object = soup.select('input[name="form_token"]')
-        drupal_form_id_object = soup.select('input[name="form_id"]')
-        if drupal_form_build_id_object and drupal_form_token_object:
-            drupal_form_build_id = drupal_form_build_id_object[0]["value"]
-            drupal_form_token = drupal_form_token_object[0]["value"]
-            drupal_form_id = drupal_form_id_object[0]["value"]
-            subject = random_sentence()
-            response = l.client.post("/comment/reply/%i" % nid, {
-		"subject":subject,
-		"comment_body[und][0][value]":random_paragraph(),
-		"comment_body[und][0][format]":"filtered_html",
-		"form_token":drupal_form_token,
-		"form_id":drupal_form_id,
-		"op":"Save",
-		"form_build_id":drupal_form_build_id}, name="(Auth) Posting comment", catch_response=True)
-            if response.status_code != 200:
-                response.failure("Failed to post comment: " + str(response.status_code))
-            elif subject.encode() not in response.content:
-                response.failure("Failed to post comment: comment not showing up")
-            else:
-                response.success()
+        drupal_form_build_id = re.search(r'''name="form_build_id" value=['"](.*?)['"]''', response.text)
+        drupal_form_token = re.search(r'''name="form_token" value=['"](.*?)['"]''', response.text)
+        drupal_form_id = re.search(r'''name="form_id" value=['"](.*?)['"]''', response.text)
+        subject = random_sentence()
+        response = l.client.post("/comment/reply/%i" % nid, {
+            "subject":subject,
+            "comment_body[und][0][value]":random_paragraph(),
+            "comment_body[und][0][format]":"filtered_html",
+            "form_token":drupal_form_token.group(0),
+            "form_id":drupal_form_id.group(0),
+            "op":"Save",
+            "form_build_id":drupal_form_build_id.group(0)}, name="(Auth) Posting comment", catch_response=True)
+        if response.status_code != 200:
+            response.failure("Failed to post comment: " + str(response.status_code))
+        elif subject.encode() not in response.content:
+            response.failure("Failed to post comment: comment not showing up")
+        else:
+            response.success()
 
 class WebsiteAuthUser(FastHttpLocust):
     weight = 1
